@@ -11,9 +11,9 @@ import (
 
 	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
-	olmv1util "github.com/openshift/openshift-tests-private/test/extended/operators/olmv1util"
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
-	"github.com/openshift/openshift-tests-private/test/extended/util/architecture"
+	olmv1util "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/operators/olmv1util"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
+	"github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util/architecture"
 	"github.com/tidwall/gjson"
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"

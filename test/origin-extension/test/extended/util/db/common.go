@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/openshift/openshift-tests-private/test/extended/util"
+	"github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kcoreclient "k8s.io/client-go/kubernetes/typed/core/v1"
 )

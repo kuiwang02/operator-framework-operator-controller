@@ -22,7 +22,7 @@ import (
 
 	configclientset "github.com/openshift/client-go/config/clientset/versioned"
 	clientimagev1 "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
 )
 
 // Start begins monitoring the cluster referenced by the default kube configuration until

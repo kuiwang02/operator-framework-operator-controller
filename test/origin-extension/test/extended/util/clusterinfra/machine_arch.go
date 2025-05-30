@@ -8,8 +8,8 @@ import (
 
 	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
-	"github.com/openshift/openshift-tests-private/test/extended/util/architecture"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
+	"github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util/architecture"
 	"github.com/tidwall/sjson"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 )

@@ -1,4 +1,4 @@
-module github.com/openshift/openshift-tests-private
+module github.com/openshift/operator-framework-operator-controller/test/origin-extension
 
 go 1.23.0
 

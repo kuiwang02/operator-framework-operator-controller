@@ -13,7 +13,7 @@ import (
 
 	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
 	"github.com/tidwall/gjson"
 )
 

@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
 	"github.com/tidwall/gjson"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -343,7 +343,7 @@ func (sub *subscriptionDescription) approve(oc *exutil.CLI, itName string, dr de
 // install-xqgtx   etcdoperator.v0.9.2   Manual     true
 // sub.approveSpecificIP(oc, itName, dr, "etcdoperator.v0.9.2", "Complete") approve this "etcdoperator.v0.9.2" InstallPlan only
 func (sub *subscriptionDescription) approveSpecificIP(oc *exutil.CLI, itName string, dr describerResrouce, csvName string, phase string) {
-	// fix https://github.com/openshift/openshift-tests-private/issues/735
+	// fix https://github.com/openshift/operator-framework-operator-controller/test/origin-extension/issues/735
 	var state string
 	wait.PollUntilContextTimeout(context.TODO(), 5*time.Second, 600*time.Second, false, func(ctx context.Context) (bool, error) {
 		state = getResource(oc, asAdmin, withoutNamespace, "sub", sub.subName, "-n", sub.namespace, "-o=jsonpath={.status.state}")

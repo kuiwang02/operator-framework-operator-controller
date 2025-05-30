@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
-	exutil "github.com/openshift/openshift-tests-private/test/extended/util"
+	exutil "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/util"
 )
 
 type ItdmsDescription struct {

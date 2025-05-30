@@ -37,7 +37,6 @@ import (
 	projectv1 "github.com/openshift/api/project/v1"
 	configclient "github.com/openshift/client-go/config/clientset/versioned"
 	securityv1client "github.com/openshift/client-go/security/clientset/versioned"
-	"github.com/openshift/openshift-tests-private/pkg/version"
 )
 
 const (
@@ -105,7 +104,6 @@ func InitTest(dryRun bool) error {
 	// Ensure that Kube tests run privileged (like they do upstream)
 	TestContext.CreateTestingNS = createTestingNS
 
-	klog.V(2).Infof("Extended test version %s", version.Get().String())
 	return nil
 }
 
