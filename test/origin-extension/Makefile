@@ -2,7 +2,16 @@ all: update build
 .PHONY: all
 OUT_DIR=bin
 
-GO_LD_FLAGS := -s -w
+GO_PKG_NAME := github.com/openshift-eng/openshift-tests-extension
+
+GIT_COMMIT := $(shell git rev-parse --short HEAD)
+BUILD_DATE := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+GIT_TREE_STATE := $(shell if git diff --quiet; then echo clean; else echo dirty; fi)
+
+GO_LD_FLAGS := -s -w \
+			-X '$(GO_PKG_NAME)/pkg/version.CommitFromGit=$(GIT_COMMIT)' \
+			-X '$(GO_PKG_NAME)/pkg/version.BuildDate=$(BUILD_DATE)' \
+			-X '$(GO_PKG_NAME)/pkg/version.GitTreeState=$(GIT_TREE_STATE)'
 
 ifeq ($(shell go env GOOS),darwin)
 	GO_LD_FLAGS += -extldflags='-ld_classic'
@@ -10,36 +19,17 @@ endif
 
 build:
 	mkdir -p "${OUT_DIR}"
-	export GO111MODULE="on" && export GOFLAGS="" && export GOWORK=off && { go build  -ldflags="${GO_LD_FLAGS}" -mod=mod -o "${OUT_DIR}" "./cmd/extended-platform-tests";sed -i'' -e '/^toolchain go/d' go.mod; rm -f go.mod-e; }
+	export GO111MODULE="on" && export GOFLAGS="" && export GOWORK=off && \
+	{ GO_COMPLIANCE_POLICY="exempt_all" go build  -ldflags="${GO_LD_FLAGS}" -mod=vendor -o "${OUT_DIR}" "./cmd/olmv1-tests-ext";sed -i'' -e '/^toolchain go/d' go.mod; rm -f go.mod-e; }
+.PHONY: build
 
 go-mod-tidy:
 	./hack/go-mod-tidy.sh
-
-nightly-test: 
-	./hack/nightly_test.sh
-
-name-check:
-	python3 ./hack/rule.py
-
-check-code:
-	./hack/check-code.sh master
-
-pr-test:
-	python3 ./hack/pr.py
+.PHONY: go-mod-tidy
 
 # Include the library makefile
 include $(addprefix ./, bindata.mk)
 
-
-IMAGE_REGISTRY :=registry.svc.ci.openshift.org
-
-# This will call a macro called "build-image" which will generate image specific targets based on the parameters:
-# $0 - macro name
-# $1 - target name
-# $2 - image ref
-# $3 - Dockerfile path
-# $4 - context directory for image build
-$(call build-image,ocp-extended-platform-tests,$(IMAGE_REGISTRY)/ocp/4.3:extended-platform-tests, ./Dockerfile.rhel7,.)
 
 # This will call a macro called "add-bindata" which will generate bindata specific targets based on the parameters:
 # $0 - macro name
@@ -52,13 +42,7 @@ $(call build-image,ocp-extended-platform-tests,$(IMAGE_REGISTRY)/ocp/4.3:extende
 # and also hooked into {update,verify}-generated for broader integration.
 $(call add-bindata,testdata,test/extended/testdata/...,testextended,testdata,./test/extended/testdata/bindata.go)
 
-test-e2e: GO_TEST_PACKAGES :=./test/e2e/...
-test-e2e: GO_TEST_FLAGS += -v
-test-e2e: GO_TEST_FLAGS += -timeout 1h
-test-e2e: GO_TEST_FLAGS += -p 1
-test-e2e: test-unit
-.PHONY: test-e2e
 
 clean:
-	$(RM) ./bin/extended-platform-tests
+	$(RM) ./bin/olmv1-tests-ext
 .PHONY: clean
