@@ -1917,6 +1917,19 @@ func FindRouterImage(oc *CLI) (string, error) {
 	return "", fmt.Errorf("expected to find ingress-controller version on clusteroperators/ingress")
 }
 
+func IsCapabilityEnabled(oc *CLI, cap configv1.ClusterVersionCapability) (bool, error) {
+	cv, err := oc.AdminConfigClient().ConfigV1().ClusterVersions().Get(context.Background(), "version", metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, capability := range cv.Status.Capabilities.EnabledCapabilities {
+		if capability == cap {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func IsClusterOperated(oc *CLI) bool {
 	configclient := oc.AdminConfigClient().ConfigV1()
 	o, err := configclient.Images().Get(context.Background(), "cluster", metav1.GetOptions{})

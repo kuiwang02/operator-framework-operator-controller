@@ -12,7 +12,8 @@ import (
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// If using ginkgo, import your tests here
-	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/operators"
+	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/olmv1qe"
+	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/olmv1dev"
 )
 
 func main() {
