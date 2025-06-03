@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	et "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/spf13/cobra"
@@ -12,8 +13,8 @@ import (
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// If using ginkgo, import your tests here
-	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/olmv1qe"
 	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/olmv1dev"
+	_ "github.com/openshift/operator-framework-operator-controller/test/origin-extension/test/extended/olmv1qe"
 )
 
 func main() {
@@ -21,29 +22,35 @@ func main() {
 	registry := e.NewRegistry()
 
 	// You can declare multiple extensions, but most people will probably only need to create one.
-	ext := e.NewExtension("openshift", "payload", "olmv1")
+	ext := e.NewExtension("openshift", "payload", "olmv1")                     // the specs of this ext will be ran by openshift-tests
+	extNonDefault := e.NewExtension("openshift", "payload", "olmv1NonDefault") // the specs of this ext will be not ran by openshift-tests
 
-	// Add suites to the extension. Specifying parents will cause the tests from this suite
-	// to be included when a parent is invoked.
 	ext.AddSuite(
 		e.Suite{
-			Name:    "example/tests",
+			Name:    "olmv1/parallel",
 			Parents: []string{"openshift/conformance/parallel"},
+			Qualifiers: []string{
+				`!(name.contains("[Serial]") || name.contains("[Disruptive]")  || name.contains("[Slow]"))`,
+			},
 		})
 
-	// The tests that a suite is composed of can be filtered by CEL expressions. By
-	// default, the qualifiers only apply to tests from this extension.
+	ext.AddSuite(
+		e.Suite{
+			Name:    "olmv1/allparallel",
+			Qualifiers: []string{
+				`!(name.contains("[Serial]") || name.contains("[Disruptive]"))`,
+			},
+		})
+
 	ext.AddSuite(e.Suite{
-		Name: "example/fast",
+		Name: "olmv1/serial",
 		Qualifiers: []string{
-			`!labels.exists(l, l=="SLOW")`,
+			`labels.exists(l, l=="SERIAL")`,
 		},
 	})
 
-	// Global suites' qualifiers will apply to all tests available, even
-	// those outside of this extension (when invoked by origin).
-	ext.AddGlobalSuite(e.Suite{
-		Name: "example/slow",
+	ext.AddSuite(e.Suite{
+		Name: "olmv1/slow",
 		Qualifiers: []string{
 			`labels.exists(l, l=="SLOW")`,
 		},
@@ -54,11 +61,11 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't build extension test specs from ginkgo: %+v", err.Error()))
 	}
+	specs.Select(et.NameContains("[Slow]")).AddLabel("SLOW")
+	specs.SelectAny([]et.SelectFunction{et.NameContains("[Serial]"), et.NameContains("[Disruptive]")}).AddLabel("SERIAL")
 
-	// Environment selector information can be added to test specs to support filtering by environment
-	specs.Select(et.NameContains("75493")).
-		Include(et.PlatformEquals("aws"))
-
+	defaultSpecs := specs.Select(NameDontContains("[NONDEFAULT]"))
+	nonDefaultSpecs := specs.Select(et.NameContains("[NONDEFAULT]"))
 	// You can add hooks to run before/after tests. There are BeforeEach, BeforeAll, AfterEach,
 	// and AfterAll. "Each" functions must be thread safe.
 	//
@@ -120,8 +127,10 @@ func main() {
 	//	}
 	// })
 
-	ext.AddSpecs(specs)
+	ext.AddSpecs(defaultSpecs)
+	extNonDefault.AddSpecs(nonDefaultSpecs)
 	registry.Register(ext)
+	registry.Register(extNonDefault)
 
 	root := &cobra.Command{
 		Long: "OpenShift Tests Extension Example",
@@ -133,5 +142,11 @@ func main() {
 		return root.Execute()
 	}(); err != nil {
 		os.Exit(1)
+	}
+}
+
+func NameDontContains(name string) et.SelectFunction {
+	return func(spec *et.ExtensionTestSpec) bool {
+		return !strings.Contains(spec.Name, name)
 	}
 }
