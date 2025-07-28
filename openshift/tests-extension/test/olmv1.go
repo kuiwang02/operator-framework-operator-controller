@@ -11,6 +11,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	configclient "github.com/openshift/client-go/config/clientset/versioned"
+
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -30,9 +31,10 @@ var _ = Describe("[sig-olmv1] OLMv1", func() {
 })
 
 var _ = Describe("[sig-olmv1][OCPFeatureGate:NewOLM] OLMv1 CRDs", func() {
-	BeforeEach(func() {
-		_ = env.Init()
-	})
+	// BeforeEach(func() {
+	// 	_ = env.Init()
+	// })
+
 	It("should be installed", func(ctx SpecContext) {
 		checkFeatureCapability(ctx)
 		cfg := env.Get().RestCfg
@@ -74,6 +76,24 @@ var _ = Describe("[sig-olmv1][OCPFeatureGate:NewOLM] OLMv1 CRDs", func() {
 					crd.plural, crd.group))
 			}
 		}
+	})
+	It("should be installed", func(ctx SpecContext) {
+		By("test")
+	})
+})
+
+var _ = Describe("[sig-olmv1][OCPFeatureGate:NewOLM] OLMv1 CRDs1", func() {
+	// BeforeEach(func() {
+	// 	_ = env.Init()
+	// })
+
+	It("should be installed1", func(ctx SpecContext) {
+		By("test1")
+		err := false
+		Expect(err).NotTo(HaveOccurred(), "failed to create config client")
+	})
+	It("should be installed", func(ctx SpecContext) {
+		By("test")
 	})
 })
 

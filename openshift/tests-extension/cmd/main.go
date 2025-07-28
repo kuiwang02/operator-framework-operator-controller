@@ -21,6 +21,7 @@ import (
 
 	// The import below is necessary to ensure that the OLMv1 tests are registered with the extension.
 	_ "github/operator-framework-operator-controller/openshift/tests-extension/test"
+	"github/operator-framework-operator-controller/openshift/tests-extension/test/env"
 )
 
 func main() {
@@ -92,6 +93,10 @@ func main() {
 		panic(fmt.Sprintf("couldn't build extension test specs from ginkgo: %+v", err.Error()))
 	}
 
+	specs.AddBeforeAll(func() {
+		env.Init()
+	})
+
 	// Ensure `[Disruptive]` tests are always also marked `[Serial]`.
 	// This prevents them from running in parallel suites, which could cause flaky failures
 	// due to disruptive behavior.
@@ -136,6 +141,22 @@ func main() {
 	// "[sig-olmv1] OLMv1 should pass a trivial sanity check",
 	// Add more removed test names below
 	)
+
+	// TODO: Init test framework for cluster-aware cases
+	// --------------------------------------------------
+	// The external binary doesn't currently init the test framework (e.g., kubeconfig, REST client).
+	// That's fine for now since our tests don't access the cluster.
+	// However, any test that does will fail when run with this binary.
+	//
+	// openshift-tests handles this via:
+	// - SuiteWithKubeTestInitializationPreSuite()
+	//   -> calls DecodeProvider() and InitializeTestFramework()
+	//
+	// We'll need to add similar logic when we start add the tests here.
+	//
+	// References:
+	// - https://github.com/openshift/origin/blob/main/pkg/cmd/openshift-tests/run/flags.go#L53
+	// - https://github.com/openshift/origin/blob/main/pkg/clioptions/clusterdiscovery/provider.go#L100
 
 	ext.AddSpecs(specs)
 	registry.Register(ext)

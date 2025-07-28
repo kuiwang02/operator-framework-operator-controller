@@ -46,6 +46,7 @@ func Get() *TestEnv {
 // It creates the REST config, client, and cluster metadata used by tests.
 func Init() *TestEnv {
 	if testEnv == nil {
+		extlogs.Infof("!!!!!!!!!!!!")
 		testEnv = initTestEnv()
 	}
 	return testEnv
