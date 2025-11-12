@@ -559,3 +559,46 @@ func expectedResource(oc *exutil.CLI, asAdmin bool, withoutNamespace bool, isCom
 		return false, nil
 	})
 }
+
+// HasExternalNetworkAccess tests network connectivity from a cluster master node
+// by attempting to access an external container registry (quay.io).
+// This method uses DebugNodeWithChroot to avoid creating pods and pulling images,
+// which would fail in disconnected environments.
+//
+// Parameters:
+//   - oc: CLI client for interacting with the OpenShift cluster
+//
+// Returns:
+//   - bool: true if external network access is available, false otherwise
+func HasExternalNetworkAccess(oc *exutil.CLI) bool {
+	if oc == nil {
+		e2e.Logf("CLI client is nil, assuming connected environment")
+		return true
+	}
+
+	e2e.Logf("Testing external network connectivity from master node using DebugNodeWithChroot")
+
+	masterNode, masterErr := exutil.GetFirstMasterNode(oc)
+	if masterErr != nil {
+		e2e.Logf("Failed to get master node: %v, assuming connected environment", masterErr)
+		return true
+	}
+
+	// Test connectivity to quay.io (container registry)
+	// Use timeout to avoid hanging, and redirect output to check connection status
+	// Note: In disconnected environments, curl will fail and bash will return non-zero exit code,
+	// causing DebugNodeWithChroot to return an error. We ignore this error and rely on output checking.
+	cmd := `timeout 10 curl -k https://quay.io > /dev/null 2>&1; [ $? -eq 0 ] && echo "connected"`
+	output, _ := exutil.DebugNodeWithChroot(oc, masterNode, "bash", "-c", cmd)
+
+	// Check if the output contains "connected"
+	// - Connected environment: curl succeeds -> echo "connected" -> output contains "connected"
+	// - Disconnected environment: curl fails -> no echo -> output empty or only debug messages
+	if strings.Contains(output, "connected") {
+		e2e.Logf("External network connectivity test succeeded (output: %s), cluster can access quay.io", strings.TrimSpace(output))
+		return true
+	}
+
+	e2e.Logf("External network connectivity test failed (output: %s), cluster cannot access quay.io", strings.TrimSpace(output))
+	return false
+}

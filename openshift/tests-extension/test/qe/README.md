@@ -227,6 +227,21 @@ All migrated test case code needs the following changes to run in the new test f
     - Do NOT add `[OCPFeatureGate:xxxx]` label
 20. **Exclusive**: change to `Serial`
 
+## Disconnected Environment Support
+
+**IMPORTANT**: With IDMS/ITMS mirror configuration in place, disconnected environments work exactly like connected environments.
+
+**What this means:**
+- Write test cases the same way you would for connected environments
+- Create ClusterCatalogs directly - no environment detection needed
+- IDMS/ITMS automatically redirects image pulls to mirror registry
+- No special helper functions or conditional logic required
+
+**Image Requirements for Migrated QE Cases:**
+- All operator images (bundle, base, index) must be hosted under `quay.io/openshifttest` or `quay.io/olmqe`
+- This ensures images are mirrored to disconnected environments via IDMS/ITMS configuration
+- Images from other registries will not be available in disconnected clusters
+
 ## Test Automation Code Requirements
 
 Consider these requirements when writing and reviewing code:
@@ -276,6 +291,31 @@ Consider these requirements when writing and reviewing code:
 
 ## Local Development Workflow
 
+### Environment Configuration
+
+**IMPORTANT**: With IDMS/ITMS in place, tests work the same in both connected and disconnected environments. No special configuration is needed.
+
+**TEST_PROVIDER Configuration**:
+
+You **ONLY** need to set `TEST_PROVIDER` when **ALL** of these conditions are met:
+1. Running **locally** (not in CI)
+2. Using **openshift-tests** (not running external binary directly)
+3. Testing on a **disconnected cluster**
+
+```bash
+# Only for: local + openshift-tests + disconnected cluster
+export TEST_PROVIDER='{"disconnected":true}'
+```
+
+**When you DON'T need to set TEST_PROVIDER**:
+- ❌ Running in CI environments (CI sets this automatically)
+- ❌ Running external binary directly (e.g., `./bin/olmv1-tests-ext run-test`)
+- ❌ Local testing on connected clusters with openshift-tests (default behavior is correct)
+
+**Why this is needed**:
+- When using openshift-tests locally on disconnected clusters, the test framework cannot auto-detect the disconnected environment
+- Setting `TEST_PROVIDER='{"disconnected":true}'` manually signals the disconnected state to the test framework
+
 ### Before Submitting PR
 
 1. **Build and compile**:
@@ -288,7 +328,7 @@ Consider these requirements when writing and reviewing code:
    ```bash
    # List all test names and search for your test using a keyword
    ./bin/olmv1-tests-ext list -o names | grep "keyword_from_your_test_name"
-   
+
    # Example: If your test is about "catalog installation", search for:
    ./bin/olmv1-tests-ext list -o names | grep "catalog"
    # This will show the full test name like:

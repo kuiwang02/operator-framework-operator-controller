@@ -295,7 +295,7 @@ var _ = g.Describe("[sig-olmv1][Jira:OLM] clusterextension", g.Label("NonHyperSh
 
 	})
 
-	g.It("PolarionID:75492-[OTP][Level0][Skipped:Disconnected]cluster extension can not be installed with wrong sa or insufficient permission sa", g.Label("original-name:[sig-olmv1][Jira:OLM] clusterextension PolarionID:75492-[Skipped:Disconnected]cluster extension can not be installed with wrong sa or insufficient permission sa"), func() {
+	g.It("PolarionID:75492-[OTP][Level0]cluster extension can not be installed with wrong sa or insufficient permission sa", g.Label("original-name:[sig-olmv1][Jira:OLM] clusterextension PolarionID:75492-[Skipped:Disconnected]cluster extension can not be installed with wrong sa or insufficient permission sa"), func() {
 		exutil.SkipForSNOCluster(oc)
 		var (
 			caseID                       = "75492"
@@ -360,6 +360,12 @@ var _ = g.Describe("[sig-olmv1][Jira:OLM] clusterextension", g.Label("NonHyperSh
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(olmv1util.Appearance(oc, exutil.Appear, "ns", ns)).To(o.BeTrue())
 
+		if olmv1util.HasExternalNetworkAccess(oc) {
+			e2e.Logf("!!!! it is connected")
+		} else {
+			e2e.Logf("!!!! it is disconnected")
+		}
+
 		g.By("Create SA for clusterextension")
 		defer saCrb.Delete(oc)
 		saCrb.Create(oc)
@@ -382,7 +388,7 @@ var _ = g.Describe("[sig-olmv1][Jira:OLM] clusterextension", g.Label("NonHyperSh
 		ce75492WrongSa.CheckClusterExtensionCondition(oc, "Installed", "message", "not found", 10, 60, 0)
 	})
 
-	g.It("PolarionID:75493-[OTP][Level0][Skipped:Disconnected]cluster extension can be installed with enough permission sa", g.Label("original-name:[sig-olmv1][Jira:OLM] clusterextension PolarionID:75493-[Skipped:Disconnected]cluster extension can be installed with enough permission sa"), func() {
+	g.It("PolarionID:75493-[OTP][Level0]cluster extension can be installed with enough permission sa", g.Label("original-name:[sig-olmv1][Jira:OLM] clusterextension PolarionID:75493-[Skipped:Disconnected]cluster extension can be installed with enough permission sa"), func() {
 		exutil.SkipForSNOCluster(oc)
 		var (
 			caseID                       = "75493"
@@ -1443,6 +1449,90 @@ var _ = g.Describe("[sig-olmv1][Jira:OLM] clusterextension", g.Label("NonHyperSh
 		// Output not logged to prevent leaking authentication credentials
 		o.Expect(err).NotTo(o.HaveOccurred(), "auth for operator-controller is not updated")
 
+	})
+
+	// author: xzha@redhat.com
+	g.It("PolarionID:68821-[OTP]olmv1 Supports Version Ranges during Installation", g.Label("original-name:[sig-operators] OLM v1 oprun should Author:xzha-ROSA-OSD_CCS-ARO-ConnectedOnly-NonHyperShiftHOST-OSD_CCS-High-68821-olmv1 Supports Version Ranges during Installation"), g.Label("Medium"), func() {
+		var (
+			caseID                                        = "68821"
+			ns                                            = "ns-" + caseID
+			sa                                            = "sa" + caseID
+			baseDir                                       = exutil.FixturePath("testdata", "olm")
+			clustercatalogTemplate                        = filepath.Join(baseDir, "clustercatalog.yaml")
+			clusterextensionTemplate                      = filepath.Join(baseDir, "clusterextension.yaml")
+			clusterextensionWithoutChannelTemplate        = filepath.Join(baseDir, "clusterextensionWithoutChannel.yaml")
+			clusterextensionWithoutChannelVersionTemplate = filepath.Join(baseDir, "clusterextensionWithoutChannelVersion.yaml")
+			saClusterRoleBindingTemplate                  = filepath.Join(baseDir, "sa-admin.yaml")
+			saCrb                                         = olmv1util.SaCLusterRolebindingDescription{
+				Name:      sa,
+				Namespace: ns,
+				Template:  saClusterRoleBindingTemplate,
+			}
+		)
+
+		clustercatalog := olmv1util.ClusterCatalogDescription{
+			Name:     "clustercatalog-" + caseID,
+			Imageref: "quay.io/olmqe/olmtest-operator-index:nginxolm68821",
+			Template: clustercatalogTemplate,
+		}
+		clusterextension := olmv1util.ClusterExtensionDescription{
+			Name:             "clusterextension-" + caseID,
+			PackageName:      "nginx68821",
+			Channel:          "candidate-v0.0",
+			Version:          ">=0.0.1",
+			InstallNamespace: ns,
+			SaName:           sa,
+			Template:         clusterextensionTemplate,
+		}
+
+		g.By("Create namespace")
+		defer oc.WithoutNamespace().AsAdmin().Run("delete").Args("ns", ns, "--ignore-not-found").Execute()
+		err := oc.WithoutNamespace().AsAdmin().Run("create").Args("ns", ns).Execute()
+		o.Expect(err).NotTo(o.HaveOccurred())
+		o.Expect(olmv1util.Appearance(oc, exutil.Appear, "ns", ns)).To(o.BeTrue())
+
+		g.By("Create SA for clusterextension")
+		defer saCrb.Delete(oc)
+		saCrb.Create(oc)
+
+		g.By("Create clustercatalog")
+		defer clustercatalog.Delete(oc)
+		clustercatalog.Create(oc)
+
+		g.By("Create clusterextension with channel candidate-v0.0, version >=0.0.1")
+		defer clusterextension.Delete(oc)
+		clusterextension.Create(oc)
+		o.Expect(clusterextension.InstalledBundle).To(o.ContainSubstring("v0.0.3"))
+		clusterextension.Delete(oc)
+
+		g.By("Create clusterextension with channel candidate-v1.0, version 1.0.x")
+		clusterextension.Channel = "candidate-v1.0"
+		clusterextension.Version = "1.0.x"
+		clusterextension.Create(oc)
+		o.Expect(clusterextension.InstalledBundle).To(o.ContainSubstring("v1.0.2"))
+		clusterextension.Delete(oc)
+
+		g.By("Create clusterextension with channel empty, version >=0.0.1 !=1.1.0 <1.1.2")
+		clusterextension.Channel = ""
+		clusterextension.Version = ">=0.0.1 !=1.1.0 <1.1.2"
+		clusterextension.Template = clusterextensionWithoutChannelTemplate
+		clusterextension.Create(oc)
+		o.Expect(clusterextension.InstalledBundle).To(o.ContainSubstring("v1.0.2"))
+		clusterextension.Delete(oc)
+
+		g.By("Create clusterextension with channel empty, version empty")
+		clusterextension.Channel = ""
+		clusterextension.Version = ""
+		clusterextension.Template = clusterextensionWithoutChannelVersionTemplate
+		clusterextension.Create(oc)
+		o.Expect(clusterextension.InstalledBundle).To(o.ContainSubstring("v1.1.0"))
+		clusterextension.Delete(oc)
+
+		g.By("Create clusterextension with invalid version")
+		clusterextension.Version = "!1.0.1"
+		clusterextension.Template = clusterextensionTemplate
+		err = clusterextension.CreateWithoutCheck(oc)
+		o.Expect(err).To(o.HaveOccurred())
 	})
 
 })
